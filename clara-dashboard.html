@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Clara — review queue</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: #F3F1EB;
+  --bg-card: #FFFFFF;
+  --bg-raised: #EDEAE1;
+  --ink: #16302B;
+  --ink-soft: #4C554F;
+  --ink-faint: #5B655F;
+  --accent: #A8622B;
+  --accent-tint: #F4E4D3;
+  --accent-ink: #7A4A1D;
+  --sage: #5E8579;
+  --sage-tint: #E4ECE7;
+  --sage-ink: #305249;
+  --danger: #B34A3C;
+  --danger-tint: #F5E1DD;
+  --danger-ink: #7A2E23;
+  --btn-primary-bg: #3F6358;
+  --btn-primary-text: #FFFFFF;
+  --border: rgba(22,48,43,0.14);
+  --border-soft: rgba(22,48,43,0.08);
+  --focus-ring: #A8622B;
+  --font-serif: 'Source Serif 4', Georgia, serif;
+  --font-sans: 'Inter', -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-mode="light"]){
+    --bg: #10201C; --bg-card: #16302A; --bg-raised: #1B3630;
+    --ink: #F0EEE6; --ink-soft: #C1CBC5; --ink-faint: #8CA098;
+    --accent: #E3A15E; --accent-tint: #3A2C1C; --accent-ink: #F1C48B;
+    --sage: #8FB6AA; --sage-tint: #1D3B33; --sage-ink: #BFE0D4;
+    --danger: #E08276; --danger-tint: #3A2320; --danger-ink: #EFB2A9;
+    --btn-primary-bg: #8FB6AA; --btn-primary-text: #10201C;
+    --border: rgba(240,238,230,0.16); --border-soft: rgba(240,238,230,0.09);
+    --focus-ring: #E3A15E;
+  }
+}
+:root[data-mode="dark"]{
+  --bg: #10201C; --bg-card: #16302A; --bg-raised: #1B3630;
+  --ink: #F0EEE6; --ink-soft: #C1CBC5; --ink-faint: #8CA098;
+  --accent: #E3A15E; --accent-tint: #3A2C1C; --accent-ink: #F1C48B;
+  --sage: #8FB6AA; --sage-tint: #1D3B33; --sage-ink: #BFE0D4;
+  --danger: #E08276; --danger-tint: #3A2320; --danger-ink: #EFB2A9;
+  --btn-primary-bg: #8FB6AA; --btn-primary-text: #10201C;
+  --border: rgba(240,238,230,0.16); --border-soft: rgba(240,238,230,0.09);
+  --focus-ring: #E3A15E;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{
+  margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.app{display:grid;grid-template-columns:236px 1fr;height:100dvh;height:100vh;}
+
+/* sidebar */
+.side{
+  border-right:1px solid var(--border-soft);padding:18px 16px;
+  display:flex;flex-direction:column;gap:20px;
+  padding-top:calc(18px + env(safe-area-inset-top,0px));
+  height:100%;overflow-y:auto;background:var(--bg);
+}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr;}
+  .side{display:none;}
+  .side.open{display:flex;position:fixed;inset:0;z-index:30;width:236px;height:100%;}
+}
+.side-logo{font-family:var(--font-serif);font-weight:600;font-size:20px;padding:0 8px;}
+.side-nav{display:flex;flex-direction:column;gap:2px;}
+.side-link{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 10px;border-radius:8px;font-size:14.5px;color:var(--ink-soft);
+  text-decoration:none;
+}
+.side-link.active{background:var(--bg-raised);color:var(--ink);font-weight:500;}
+.side-link .badge{
+  background:var(--accent-tint);color:var(--accent-ink);font-size:12px;
+  padding:1px 7px;border-radius:20px;font-weight:500;
+}
+.side-foot{margin-top:auto;padding:0 8px;font-size:13px;color:var(--ink-faint);}
+
+/* main */
+.main{
+  padding:16px 24px;padding-top:calc(16px + env(safe-area-inset-top,0px));
+  min-width:0;height:100%;display:flex;flex-direction:column;overflow:hidden;
+}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap;flex:none;}
+.menu-btn{display:none;background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;color:var(--ink);cursor:pointer;}
+@media (max-width:900px){ .menu-btn{display:inline-block;} }
+h1{font-family:var(--font-serif);font-weight:600;font-size:21px;margin:0;}
+.sub{color:var(--ink-soft);font-size:13.5px;margin:2px 0 0;}
+.search{
+  display:flex;align-items:center;gap:8px;background:var(--bg-card);
+  border:1px solid var(--border-soft);border-radius:9px;padding:7px 12px;
+  font-size:14px;color:var(--ink-faint);min-width:220px;
+}
+.search input{border:none;background:none;outline:none;color:var(--ink);font-size:14px;width:100%;font-family:inherit;}
+
+/* stats */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px;flex:none;}
+@media (max-width:700px){ .stats-row{grid-template-columns:1fr;} }
+.stat{background:var(--bg-card);border:1px solid var(--border-soft);border-radius:12px;padding:12px 16px;}
+.stat .n{font-family:var(--font-serif);font-size:21px;font-weight:600;margin:0 0 1px;}
+.stat .l{font-size:12.5px;color:var(--ink-soft);margin:0;}
+
+/* layout: table + drawer */
+.workspace{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:stretch;flex:1;min-height:0;}
+@media (max-width:1100px){ .workspace{grid-template-columns:1fr;} }
+
+.panel{
+  background:var(--bg-card);border:1px solid var(--border-soft);border-radius:14px;
+  overflow:hidden;display:flex;flex-direction:column;min-height:0;
+}
+.panel-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;border-bottom:1px solid var(--border-soft);flex:none;
+}
+.panel-head .t{font-weight:500;font-size:15px;}
+.filter-btn{
+  display:flex;align-items:center;gap:7px;font-size:13.5px;padding:8px 14px;
+  border-radius:8px;border:1px solid var(--border);color:var(--ink);
+  cursor:pointer;background:none;font-family:inherit;
+}
+.filter-btn:hover{background:var(--bg-raised);}
+#filter-active-label{color:var(--ink-faint);}
+#filter-active-label:not(:empty)::before{content:": ";}
+
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(16,32,28,0.45);
+  display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;
+}
+.modal-overlay[hidden]{display:none;}
+.modal{
+  background:var(--bg-card);border-radius:14px;max-width:320px;width:100%;
+  box-shadow:0 12px 32px rgba(0,0,0,0.18);
+}
+.modal-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 18px;border-bottom:1px solid var(--border-soft);
+}
+.modal-head h2{font-family:var(--font-serif);font-weight:600;font-size:17px;margin:0;}
+.modal-close{
+  background:none;border:none;font-size:20px;line-height:1;color:var(--ink-faint);
+  cursor:pointer;width:28px;height:28px;border-radius:6px;
+}
+.modal-close:hover{background:var(--bg-raised);color:var(--ink);}
+.modal-body{padding:10px;display:flex;flex-direction:column;gap:2px;}
+.modal-option{
+  display:flex;align-items:center;justify-content:space-between;width:100%;
+  text-align:left;padding:11px 12px;border-radius:8px;border:none;background:none;
+  font-size:14.5px;color:var(--ink);cursor:pointer;font-family:inherit;
+}
+.modal-option:hover{background:var(--bg-raised);}
+.modal-option[aria-checked="true"]{background:var(--sage-tint);color:var(--sage-ink);font-weight:500;}
+.modal-option .check{opacity:0;}
+.modal-option[aria-checked="true"] .check{opacity:1;}
+
+.table-scroll{flex:1;min-height:0;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+thead{position:sticky;top:0;background:var(--bg-card);z-index:1;}
+thead th{
+  text-align:left;font-weight:500;color:var(--ink-faint);font-size:12.5px;
+  padding:12px 18px;border-bottom:1px solid var(--border-soft);
+}
+tbody td{padding:11px 18px;border-bottom:1px solid var(--border-soft);vertical-align:middle;}
+tbody tr{cursor:pointer;}
+tbody tr:hover{background:var(--bg-raised);}
+tbody tr.selected{background:var(--sage-tint);}
+tbody tr:last-child td{border-bottom:none;}
+.patient .name{font-weight:500;}
+.patient .sub{margin:2px 0 0;font-size:13px;color:var(--ink-faint);}
+.amt{font-variant-numeric:tabular-nums;font-weight:500;}
+.tag{
+  display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 10px;
+  border-radius:20px;font-weight:500;white-space:nowrap;
+}
+.tag.warn{background:var(--accent-tint);color:var(--accent-ink);}
+.tag.danger{background:var(--danger-tint);color:var(--danger-ink);}
+.tag.ok{background:var(--sage-tint);color:var(--sage-ink);}
+.date{color:var(--ink-faint);font-size:13px;white-space:nowrap;}
+
+/* drawer */
+.drawer{display:flex;flex-direction:column;min-height:0;}
+@media (max-width:1100px){
+  .drawer{display:none;}
+  .drawer.open{display:flex;position:fixed;inset:0;z-index:40;border-radius:0;height:100dvh;height:100vh;padding-top:env(safe-area-inset-top,0px);}
+}
+.drawer-close{
+  display:none;background:none;border:none;color:var(--ink-soft);font-size:14px;
+  padding:14px 18px 0;text-align:left;cursor:pointer;font-family:inherit;
+}
+@media (max-width:1100px){ .drawer-close{display:block;} }
+.drawer-head{padding:14px 18px;border-bottom:1px solid var(--border-soft);flex:none;}
+.drawer-head .id{font-size:12.5px;color:var(--ink-faint);margin:0 0 4px;}
+.drawer-head .name{font-family:var(--font-serif);font-weight:600;font-size:19px;margin:0;}
+.drawer-body{padding:18px;display:flex;flex-direction:column;gap:16px;flex:1;min-height:0;overflow-y:auto;}
+.field-row{display:flex;justify-content:space-between;font-size:14px;}
+.field-row .l{color:var(--ink-faint);}
+.field-row .v{font-weight:500;}
+.confidence{}
+.confidence .l{font-size:13px;color:var(--ink-faint);margin:0 0 6px;display:flex;justify-content:space-between;}
+.bar{height:6px;border-radius:4px;background:var(--bg-raised);overflow:hidden;}
+.bar-fill{height:100%;background:var(--accent);border-radius:4px;}
+.note-box{
+  background:var(--bg-raised);border-radius:10px;padding:12px 14px;font-size:13.5px;
+  color:var(--ink-soft);line-height:1.55;
+}
+.drawer-actions{display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--border-soft);flex:none;}
+.btn{
+  flex:1;padding:11px 14px;border-radius:9px;font-size:14px;font-weight:500;
+  border:none;cursor:pointer;font-family:inherit;
+}
+.btn-primary{background:var(--btn-primary-bg);color:var(--btn-primary-text);}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--ink);}
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+.skip-link{
+  position:absolute;left:12px;top:-60px;background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:8px;z-index:100;text-decoration:none;font-size:14px;
+  transition:top .15s ease;
+}
+.skip-link:focus{top:calc(env(safe-area-inset-top,0px) + 12px);}
+:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;}
+tbody tr:focus-visible{outline:2px solid var(--focus-ring);outline-offset:-2px;}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<div aria-live="polite" class="sr-only" id="live-status"></div>
+
+<div class="app">
+  <aside class="side" id="side" aria-label="Main navigation">
+    <div class="side-logo">Clara</div>
+    <nav class="side-nav" aria-label="Sections">
+      <a class="side-link" href="#">Dashboard</a>
+      <a class="side-link" href="#">Payments</a>
+      <a class="side-link active" href="#" aria-current="page">Review queue <span class="badge" aria-label="4 items">4</span></a>
+      <a class="side-link" href="#">Claims</a>
+      <a class="side-link" href="#">Enrollments</a>
+      <a class="side-link" href="#">Reports</a>
+      <a class="side-link" href="#">Settings</a>
+    </nav>
+    <div class="side-foot">Alvarez Family Dental</div>
+  </aside>
+
+  <main class="main" id="main-content">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="menu-btn" id="menu-btn" onclick="toggleSidebar()" aria-label="Open navigation" aria-expanded="false" aria-controls="side">
+          <span aria-hidden="true">&#9776;</span>
+        </button>
+        <div>
+          <h1>Review queue</h1>
+          <p class="sub">Items Clara wasn't confident enough to post on its own.</p>
+        </div>
+      </div>
+      <div class="search">
+        <span aria-hidden="true">&#128269;</span>
+        <label for="search-input" class="sr-only">Search patient, payer, or claim ID</label>
+        <input type="text" id="search-input" placeholder="Search patient, payer, or claim ID">
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat"><p class="n">4</p><p class="l">Waiting on your review</p></div>
+      <div class="stat"><p class="n">$18,240</p><p class="l">Posted automatically today</p></div>
+      <div class="stat"><p class="n">96%</p><p class="l">Of payments posted without review this week</p></div>
+    </div>
+
+    <div class="workspace">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="t" id="items-count">4 items</span>
+          <button type="button" class="filter-btn" id="filter-trigger" onclick="openFilterModal()" aria-haspopup="dialog">
+            <span aria-hidden="true">&#9881;</span> Filter<span id="filter-active-label"></span>
+          </button>
+        </div>
+        <div class="table-scroll">
+        <table>
+          <caption class="sr-only">Claims and payments flagged for review. Select a row to see full reconciliation details.</caption>
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Payer</th>
+              <th>Amount</th>
+              <th>Reason flagged</th>
+              <th>Received</th>
+            </tr>
+          </thead>
+          <tbody id="rows">
+            <tr class="selected" data-i="0" data-category="denials" tabindex="0" aria-selected="true" aria-label="Marcus Webb, Cigna, $340.00, partial denial, received September 17. View details.">
+              <td class="patient"><p class="name">Marcus Webb</p><p class="sub">Claim #DC-48213</p></td>
+              <td>Cigna</td>
+              <td class="amt">$340.00</td>
+              <td><span class="tag danger">Partial denial</span></td>
+              <td class="date">Sep 17</td>
+            </tr>
+            <tr data-i="1" data-category="mismatch" tabindex="0" aria-selected="false" aria-label="Priya Nair, Delta Dental, $126.50, amount mismatch, received September 17. View details.">
+              <td class="patient"><p class="name">Priya Nair</p><p class="sub">Claim #DC-48260</p></td>
+              <td>Delta Dental</td>
+              <td class="amt">$126.50</td>
+              <td><span class="tag warn">Amount mismatch</span></td>
+              <td class="date">Sep 17</td>
+            </tr>
+            <tr data-i="2" data-category="unmatched" tabindex="0" aria-selected="false" aria-label="Owen Fisher, Aetna, $975.00, no matching claim, received September 18. View details.">
+              <td class="patient"><p class="name">Owen Fisher</p><p class="sub">Claim #DC-48301</p></td>
+              <td>Aetna</td>
+              <td class="amt">$975.00</td>
+              <td><span class="tag warn">No matching claim</span></td>
+              <td class="date">Sep 18</td>
+            </tr>
+            <tr data-i="3" data-category="duplicate" tabindex="0" aria-selected="false" aria-label="Lena Ortiz, MetLife, $58.25, duplicate payment, received September 18. View details.">
+              <td class="patient"><p class="name">Lena Ortiz</p><p class="sub">Claim #DC-48312</p></td>
+              <td>MetLife</td>
+              <td class="amt">$58.25</td>
+              <td><span class="tag ok">Duplicate payment</span></td>
+              <td class="date">Sep 18</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="panel drawer" id="drawer">
+        <button type="button" class="drawer-close" onclick="closeDrawer()">&larr; Back to list</button>
+        <div class="drawer-head">
+          <p class="id">Claim #DC-48213</p>
+          <p class="name" id="d-name">Marcus Webb</p>
+        </div>
+        <div class="drawer-body">
+          <div class="field-row"><span class="l">Payer</span><span class="v" id="d-payer">Cigna</span></div>
+          <div class="field-row"><span class="l">Billed amount</span><span class="v" id="d-billed">$420.00</span></div>
+          <div class="field-row"><span class="l">Paid amount</span><span class="v" id="d-paid">$340.00</span></div>
+          <div class="field-row"><span class="l">Patient responsibility</span><span class="v" id="d-resp">$0.00</span></div>
+          <div class="confidence">
+            <p class="l" id="conf-label"><span>Match confidence</span><span id="d-conf-num">62%</span></p>
+            <div class="bar" role="progressbar" aria-labelledby="conf-label" aria-valuemin="0" aria-valuemax="100" aria-valuenow="62">
+              <div class="bar-fill" id="d-conf-bar" style="width:62%"></div>
+            </div>
+          </div>
+          <div class="note-box" id="d-note">
+            Cigna paid $80 less than the billed amount with adjustment code CO-45, but the claim on file shows a different fee schedule. Confirm the write-off before this posts.
+          </div>
+        </div>
+        <div class="drawer-actions">
+          <button type="button" class="btn btn-outline">Send back</button>
+          <button type="button" class="btn btn-primary">Approve &amp; post</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="filter-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="filter-modal-title">
+    <div class="modal-head">
+      <h2 id="filter-modal-title">Filter by reason</h2>
+      <button type="button" class="modal-close" aria-label="Close filter options" onclick="closeFilterModal()">&times;</button>
+    </div>
+    <div class="modal-body" role="radiogroup" aria-labelledby="filter-modal-title">
+      <button type="button" class="modal-option" data-filter="all" role="radio" aria-checked="true">
+        <span>All items</span><span class="check" aria-hidden="true">&#10003;</span>
+      </button>
+      <button type="button" class="modal-option" data-filter="denials" role="radio" aria-checked="false">
+        <span>Denials</span><span class="check" aria-hidden="true">&#10003;</span>
+      </button>
+      <button type="button" class="modal-option" data-filter="unmatched" role="radio" aria-checked="false">
+        <span>Unmatched</span><span class="check" aria-hidden="true">&#10003;</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const data = [
+  {name:"Marcus Webb", id:"DC-48213", payer:"Cigna", billed:"$420.00", paid:"$340.00", resp:"$0.00", conf:62,
+   note:"Cigna paid $80 less than the billed amount with adjustment code CO-45, but the claim on file shows a different fee schedule. Confirm the write-off before this posts."},
+  {name:"Priya Nair", id:"DC-48260", payer:"Delta Dental", billed:"$150.00", paid:"$126.50", resp:"$23.50", conf:74,
+   note:"Paid amount doesn't match the contracted rate on file for this procedure code. Likely a recent fee schedule update from Delta Dental."},
+  {name:"Owen Fisher", id:"DC-48301", payer:"Aetna", billed:"$975.00", paid:"$975.00", resp:"$0.00", conf:41,
+   note:"This payment doesn't match any open claim for this patient. It may belong to a claim submitted from a different location."},
+  {name:"Lena Ortiz", id:"DC-48312", payer:"MetLife", billed:"$58.25", paid:"$58.25", resp:"$0.00", conf:88,
+   note:"MetLife appears to have paid this claim twice. Recommend refunding the duplicate rather than posting it as new revenue."}
+];
+
+let lastRow = null;
+
+function selectRow(row){
+  lastRow = row;
+  document.querySelectorAll('#rows tr').forEach(r=>{
+    r.classList.remove('selected');
+    r.setAttribute('aria-selected','false');
+  });
+  row.classList.add('selected');
+  row.setAttribute('aria-selected','true');
+
+  const d = data[row.dataset.i];
+  document.querySelector('.drawer-head .id').textContent = 'Claim #' + d.id;
+  document.getElementById('d-name').textContent = d.name;
+  document.getElementById('d-payer').textContent = d.payer;
+  document.getElementById('d-billed').textContent = d.billed;
+  document.getElementById('d-paid').textContent = d.paid;
+  document.getElementById('d-resp').textContent = d.resp;
+  document.getElementById('d-conf-num').textContent = d.conf + '%';
+  document.getElementById('d-conf-bar').style.width = d.conf + '%';
+  document.getElementById('d-conf-bar').parentElement.setAttribute('aria-valuenow', d.conf);
+  document.getElementById('d-note').textContent = d.note;
+  const drawer = document.getElementById('drawer');
+  drawer.classList.add('open');
+
+  document.getElementById('live-status').textContent = 'Showing details for ' + d.name + ', claim ' + d.id;
+
+  if (window.matchMedia('(max-width: 1100px)').matches){
+    const closeBtn = drawer.querySelector('.drawer-close');
+    if (closeBtn) closeBtn.focus();
+  }
+}
+
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  if (lastRow) lastRow.focus();
+}
+
+document.querySelectorAll('#rows tr').forEach(row=>{
+  row.addEventListener('click', ()=>selectRow(row));
+  row.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      selectRow(row);
+    }
+  });
+});
+
+document.addEventListener('keydown', (e)=>{
+  if (e.key === 'Escape'){
+    const drawer = document.getElementById('drawer');
+    if (drawer.classList.contains('open') && window.matchMedia('(max-width: 1100px)').matches){
+      closeDrawer();
+    }
+  }
+});
+
+const labels = {all:'', denials:'Denials', unmatched:'Unmatched'};
+let filterTriggerEl = null;
+
+function applyFilter(value){
+  document.querySelectorAll('#rows tr').forEach(row=>{
+    const show = value === 'all' || row.dataset.category === value;
+    row.style.display = show ? '' : 'none';
+  });
+  const visibleCount = document.querySelectorAll('#rows tr:not([style*="display: none"])').length;
+  document.getElementById('items-count').textContent = visibleCount + ' item' + (visibleCount === 1 ? '' : 's');
+  document.getElementById('filter-active-label').textContent = labels[value];
+  document.querySelectorAll('.modal-option').forEach(opt=>{
+    opt.setAttribute('aria-checked', String(opt.dataset.filter === value));
+  });
+}
+
+function openFilterModal(){
+  filterTriggerEl = document.getElementById('filter-trigger');
+  const modal = document.getElementById('filter-modal');
+  modal.hidden = false;
+  const firstOption = modal.querySelector('.modal-option');
+  if (firstOption) firstOption.focus();
+}
+
+function closeFilterModal(){
+  document.getElementById('filter-modal').hidden = true;
+  if (filterTriggerEl) filterTriggerEl.focus();
+}
+
+document.querySelectorAll('.modal-option').forEach(opt=>{
+  opt.addEventListener('click', ()=>{
+    applyFilter(opt.dataset.filter);
+    closeFilterModal();
+  });
+});
+
+document.getElementById('filter-modal').addEventListener('click', (e)=>{
+  if (e.target.id === 'filter-modal') closeFilterModal();
+});
+
+document.addEventListener('keydown', (e)=>{
+  const modal = document.getElementById('filter-modal');
+  if (!modal.hidden){
+    if (e.key === 'Escape'){ closeFilterModal(); return; }
+    if (e.key === 'Tab'){
+      const focusable = Array.from(modal.querySelectorAll('button'));
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  }
+});
+
+function toggleSidebar(){
+  const side = document.getElementById('side');
+  const btn = document.getElementById('menu-btn');
+  const willOpen = !side.classList.contains('open');
+  side.classList.toggle('open', willOpen);
+  btn.setAttribute('aria-expanded', String(willOpen));
+  btn.setAttribute('aria-label', willOpen ? 'Close navigation' : 'Open navigation');
+  if (willOpen){
+    const firstLink = side.querySelector('a');
+    if (firstLink) firstLink.focus();
+  }
+}
+document.addEventListener('keydown', (e)=>{
+  if (e.key === 'Escape'){
+    const side = document.getElementById('side');
+    if (side.classList.contains('open')){
+      toggleSidebar();
+      document.getElementById('menu-btn').focus();
+    }
+  }
+});
+</script>
+</body>
+</html>

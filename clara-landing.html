@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Clara — run the front office without living in it</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: #F3F1EB;
+  --bg-card: #FFFFFF;
+  --bg-raised: #EDEAE1;
+  --ink: #16302B;
+  --ink-soft: #4C554F;
+  --ink-faint: #5B655F;
+  --accent: #A8622B;
+  --accent-ink: #FFFFFF;
+  --sage: #5E8579;
+  --sage-text: #3F6358;
+  --sage-tint: #E4ECE7;
+  --border: rgba(22,48,43,0.14);
+  --border-soft: rgba(22,48,43,0.08);
+  --font-serif: 'Source Serif 4', Georgia, serif;
+  --font-sans: 'Inter', -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-mode="light"]){
+    --bg: #10201C;
+    --bg-card: #16302A;
+    --bg-raised: #1B3630;
+    --ink: #F0EEE6;
+    --ink-soft: #C1CBC5;
+    --ink-faint: #8CA098;
+    --accent: #E3A15E;
+    --accent-ink: #16302A;
+    --sage: #8FB6AA;
+    --sage-text: #8FB6AA;
+    --sage-tint: #1D3B33;
+    --border: rgba(240,238,230,0.16);
+    --border-soft: rgba(240,238,230,0.09);
+  }
+}
+:root[data-mode="dark"]{
+  --bg: #10201C;
+  --bg-card: #16302A;
+  --bg-raised: #1B3630;
+  --ink: #F0EEE6;
+  --ink-soft: #C1CBC5;
+  --ink-faint: #8CA098;
+  --accent: #E3A15E;
+  --accent-ink: #16302A;
+  --sage: #8FB6AA;
+  --sage-text: #8FB6AA;
+  --sage-tint: #1D3B33;
+  --border: rgba(240,238,230,0.16);
+  --border-soft: rgba(240,238,230,0.09);
+}
+*{box-sizing:border-box;}
+html{scroll-padding-top: calc(env(safe-area-inset-top,0px) + 70px);}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-sans);
+  line-height:1.6;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+img,svg{max-width:100%;display:block;}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px;}
+a{color:inherit;}
+
+/* nav */
+.nav{
+  position:sticky;top:0;z-index:20;
+  padding-top:env(safe-area-inset-top,0px);
+  background:color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom:1px solid var(--border-soft);
+}
+.nav-inner{
+  max-width:1120px;margin:0 auto;padding:16px 24px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+}
+.logo{
+  font-family:var(--font-serif);font-size:22px;font-weight:600;
+  letter-spacing:0.01em;
+}
+.nav-links{display:flex;gap:32px;font-size:14.5px;color:var(--ink-soft);}
+.nav-links a{text-decoration:none;}
+.nav-links a:hover{color:var(--ink);}
+.nav-right{display:flex;align-items:center;gap:20px;font-size:14.5px;}
+.menu-toggle{
+  display:none;background:none;border:1px solid var(--border);border-radius:8px;
+  width:40px;height:40px;font-size:16px;color:var(--ink);cursor:pointer;
+}
+.mobile-panel{display:none;}
+@media (max-width:840px){
+  .menu-toggle{display:inline-flex;align-items:center;justify-content:center;}
+  .mobile-panel.open{
+    display:flex;flex-direction:column;gap:2px;padding:14px 24px 18px;
+    border-top:1px solid var(--border-soft);
+  }
+  .mobile-panel a{
+    padding:10px 4px;font-size:15px;text-decoration:none;color:var(--ink);
+    border-bottom:1px solid var(--border-soft);
+  }
+}
+.nav-cta,.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--accent);color:var(--accent-ink);
+  padding:10px 20px;border-radius:8px;font-size:14.5px;font-weight:500;
+  text-decoration:none;border:none;cursor:pointer;
+  transition:opacity .15s ease;
+}
+.nav-cta:hover,.btn:hover{opacity:0.88;}
+.btn-ghost{
+  background:transparent;color:var(--ink);border:1px solid var(--border);
+}
+.btn-lg{padding:14px 28px;font-size:16px;border-radius:9px;}
+@media (max-width:840px){ .nav-links{display:none;} }
+
+/* hero */
+.hero{padding:76px 0 96px;}
+.hero-grid{display:grid;grid-template-columns:1.05fr 0.95fr;gap:56px;align-items:center;}
+@media (max-width:900px){ .hero-grid{grid-template-columns:1fr;} }
+.eyebrow{
+  color:var(--sage-text);font-size:14.5px;font-weight:500;margin:0 0 18px;
+}
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+.skip-link{
+  position:absolute;left:12px;top:-60px;background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:8px;z-index:100;text-decoration:none;font-size:14px;
+  transition:top .15s ease;
+}
+.skip-link:focus{top:calc(env(safe-area-inset-top,0px) + 12px);}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+summary:focus-visible{outline-offset:4px;}
+h1{
+  font-family:var(--font-serif);
+  font-weight:600;
+  font-size:clamp(34px,5vw,52px);
+  line-height:1.08;
+  letter-spacing:-0.01em;
+  margin:0 0 22px;
+  max-width:15ch;
+}
+.lede{
+  font-size:18px;color:var(--ink-soft);max-width:46ch;margin:0 0 32px;
+}
+.hero-actions{display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
+.link-arrow{font-size:15px;text-decoration:none;border-bottom:1px solid var(--border);padding-bottom:2px;}
+.link-arrow:hover{border-color:var(--ink);}
+
+/* activity card */
+.activity-card{
+  background:var(--bg-card);border:1px solid var(--border-soft);
+  border-radius:14px;padding:22px;
+  box-shadow:0 1px 2px rgba(0,0,0,0.03);
+}
+.activity-head{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding-bottom:14px;border-bottom:1px solid var(--border-soft);margin-bottom:6px;
+}
+.activity-head .t1{font-weight:500;font-size:15px;}
+.activity-head .t2{font-size:13px;color:var(--ink-faint);}
+.activity-list{list-style:none;margin:0;padding:0;}
+.arow{
+  display:flex;gap:12px;align-items:flex-start;padding:13px 0;
+  border-bottom:1px solid var(--border-soft);
+  opacity:0;animation:rise .5s ease forwards;
+}
+.arow:last-child{border-bottom:none;}
+.dot{
+  width:8px;height:8px;border-radius:50%;margin-top:7px;flex:none;
+}
+.dot.sage{background:var(--sage);}
+.dot.accent{background:var(--accent);}
+.dot.faint{background:var(--ink-faint);}
+.arow p{margin:0;font-size:14.5px;}
+.arow time{font-size:12.5px;color:var(--ink-faint);white-space:nowrap;margin-left:auto;padding-left:12px;}
+@keyframes rise{ from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+@media (prefers-reduced-motion: reduce){ .arow{animation:none;opacity:1;} }
+
+/* section shared */
+section{padding:88px 0;}
+.section-border{border-top:1px solid var(--border-soft);}
+.section-head{max-width:56ch;margin:0 0 48px;}
+.section-head h2{
+  font-family:var(--font-serif);font-weight:600;
+  font-size:clamp(26px,3vw,34px);line-height:1.2;margin:0 0 14px;
+}
+.section-head p{color:var(--ink-soft);font-size:16.5px;margin:0;}
+
+/* three-up */
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;}
+@media (max-width:840px){ .trio{grid-template-columns:1fr;} }
+.trio-card{
+  background:var(--bg-card);border:1px solid var(--border-soft);border-radius:14px;
+  padding:28px;
+}
+.trio-card h3{font-family:var(--font-serif);font-weight:600;font-size:19px;margin:0 0 10px;}
+.trio-card p{color:var(--ink-soft);font-size:15px;margin:0;}
+.trio-mark{
+  width:34px;height:34px;border-radius:9px;background:var(--sage-tint);
+  color:var(--sage);display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-serif);font-weight:600;font-size:15px;margin-bottom:18px;
+}
+
+/* stat band */
+.stat-band{background:var(--bg-raised);}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;text-align:left;}
+@media (max-width:840px){ .stats{grid-template-columns:1fr;} }
+.stat-num{font-family:var(--font-serif);font-size:44px;font-weight:600;margin:0 0 6px;}
+.stat-label{color:var(--ink-soft);font-size:15px;margin:0;max-width:28ch;}
+
+/* quote */
+.quote-wrap{max-width:760px;}
+blockquote{
+  margin:0 0 22px;font-family:var(--font-serif);font-weight:500;
+  font-size:clamp(21px,2.6vw,27px);line-height:1.45;color:var(--ink);
+}
+.quote-attr{display:flex;align-items:center;gap:12px;font-size:14.5px;color:var(--ink-soft);}
+.avatar{
+  width:38px;height:38px;border-radius:50%;background:var(--sage-tint);color:var(--sage-text);
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-weight:600;flex:none;
+}
+
+/* security grid */
+.sec-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;}
+@media (max-width:900px){ .sec-grid{grid-template-columns:repeat(2,1fr);} }
+.sec-item{padding:20px 0;border-top:1px solid var(--border-soft);}
+.sec-item h4{font-size:15px;font-weight:500;margin:0 0 8px;}
+.sec-item p{font-size:14px;color:var(--ink-soft);margin:0;}
+
+/* faq */
+.faq{max-width:760px;}
+details{border-top:1px solid var(--border-soft);padding:20px 0;}
+details:last-child{border-bottom:1px solid var(--border-soft);}
+summary{
+  cursor:pointer;font-size:16px;font-weight:500;list-style:none;
+  display:flex;justify-content:space-between;align-items:center;gap:16px;
+}
+summary::-webkit-details-marker{display:none;}
+summary::after{
+  content:'+';font-size:20px;color:var(--ink-faint);flex:none;font-weight:400;
+}
+details[open] summary::after{content:'\2212';}
+details p{color:var(--ink-soft);font-size:15px;margin:14px 0 0;max-width:60ch;}
+
+/* closing cta */
+.closing{
+  background:var(--ink);color:var(--bg);border-radius:20px;
+  padding:64px 48px;text-align:left;
+}
+:root[data-mode="dark"] .closing{ background:var(--bg-card); }
+@media (prefers-color-scheme: dark){ :root:not([data-mode="light"]) .closing{ background:var(--bg-card); } }
+.closing h2{
+  font-family:var(--font-serif);font-weight:600;font-size:clamp(26px,3.4vw,36px);
+  margin:0 0 16px;max-width:18ch;color:inherit;
+}
+.closing p{opacity:0.75;font-size:16px;margin:0 0 28px;max-width:44ch;}
+@media (max-width:600px){ .closing{padding:40px 26px;} }
+
+/* footer */
+footer{padding:56px 0 48px;}
+.foot-grid{display:flex;justify-content:space-between;flex-wrap:wrap;gap:28px;padding-bottom:28px;border-bottom:1px solid var(--border-soft);margin-bottom:22px;}
+.foot-links{display:flex;gap:28px;font-size:14px;color:var(--ink-soft);flex-wrap:wrap;}
+.foot-links a{text-decoration:none;}
+.foot-bottom{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--ink-faint);}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<div class="nav">
+  <div class="nav-inner">
+    <div class="logo">Clara</div>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#how">How it works</a>
+      <a href="#security">Security</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-right">
+      <a href="#" class="link-arrow" style="border:none;">Log in</a>
+      <a href="#" class="nav-cta">Book a demo</a>
+      <button class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="mobile-panel" aria-label="Open menu" onclick="toggleMobileNav()">
+        <span aria-hidden="true">&#9776;</span>
+      </button>
+    </div>
+  </div>
+  <nav class="mobile-panel" id="mobile-panel" aria-label="Mobile">
+    <a href="#how">How it works</a>
+    <a href="#security">Security</a>
+    <a href="#faq">FAQ</a>
+    <a href="#">Log in</a>
+  </nav>
+</div>
+
+<main id="main-content">
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">For dental and medical practices</p>
+      <h1>Run the front office without living in it.</h1>
+      <p class="lede">Clara enrolls your payers, reconciles every deposit, and posts it all to your ledger — so your team spends the day with patients, not portals.</p>
+      <div class="hero-actions">
+        <a href="#" class="btn btn-lg">Book a demo</a>
+        <a href="#how" class="link-arrow">See how it works</a>
+      </div>
+    </div>
+    <div class="activity-card" id="activity">
+      <div class="activity-head">
+        <span class="t1">Today, Alvarez Family Dental</span>
+        <span class="t2">Tuesday</span>
+      </div>
+      <ul class="activity-list" role="list" aria-label="Example of a day's automated activity">
+        <li class="arow" style="animation-delay:.05s">
+          <span class="dot sage" aria-hidden="true"></span>
+          <p>Posted $2,140.00 from Delta Dental</p>
+          <time>9:02 AM</time>
+        </li>
+        <li class="arow" style="animation-delay:.15s">
+          <span class="dot sage" aria-hidden="true"></span>
+          <p>Matched 3 claims to this week's EFT</p>
+          <time>9:14 AM</time>
+        </li>
+        <li class="arow" style="animation-delay:.25s">
+          <span class="dot accent" aria-hidden="true"></span>
+          <p>Flagged 1 claim for your review</p>
+          <time>10:31 AM</time>
+        </li>
+        <li class="arow" style="animation-delay:.35s">
+          <span class="dot sage" aria-hidden="true"></span>
+          <p>Enrolled Dr. Alvarez for EFT with Cigna</p>
+          <time>11:47 AM</time>
+        </li>
+        <li class="arow" style="animation-delay:.45s">
+          <span class="dot faint" aria-hidden="true"></span>
+          <p>Closed the books for August</p>
+          <time>4:58 PM</time>
+        </li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<section class="section-border" id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Three things Clara does every day</h2>
+      <p>No new software to learn. Clara works inside the practice management system you already have.</p>
+    </div>
+    <div class="trio">
+      <div class="trio-card">
+        <div class="trio-mark">1</div>
+        <h3>Enrolls and connects</h3>
+        <p>Sets up electronic payment enrollment with every payer, so paper checks stop showing up in the mail.</p>
+      </div>
+      <div class="trio-card">
+        <div class="trio-mark">2</div>
+        <h3>Reconciles payments</h3>
+        <p>Matches every deposit to the right patient, claim, and contracted rate — and flags anything unclear.</p>
+      </div>
+      <div class="trio-card">
+        <div class="trio-mark">3</div>
+        <h3>Posts to your ledger</h3>
+        <p>Writes the reconciled result straight into your existing system, in real time, without re-keying a thing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stat-band section-border">
+  <div class="wrap">
+    <div class="stats">
+      <div>
+        <p class="stat-num">100+</p>
+        <p class="stat-label">hours a month handed back to your front desk</p>
+      </div>
+      <div>
+        <p class="stat-num">Same day</p>
+        <p class="stat-label">posting on nearly every payment that comes in</p>
+      </div>
+      <div>
+        <p class="stat-num">Zero</p>
+        <p class="stat-label">new logins — Clara works inside your current PMS</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-border">
+  <div class="wrap quote-wrap">
+    <figure style="margin:0;">
+      <blockquote style="margin:0 0 22px;">"Clara caught a denied claim we'd have missed for weeks. It's the first piece of software that's actually made my biller's job smaller."</blockquote>
+      <figcaption class="quote-attr">
+        <span class="avatar" aria-hidden="true">MA</span>
+        <span>Dr. Maria Alvarez, <cite>Alvarez Family Dental</cite> (sample quote)</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="section-border" id="security">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Built for how patient data has to be handled</h2>
+      <p>Every action Clara takes is logged, reversible where it matters, and reviewed by a person when it should be.</p>
+    </div>
+    <div class="sec-grid">
+      <div class="sec-item">
+        <h4>HIPAA compliant</h4>
+        <p>Encrypted in transit and at rest, with access limited to what each role needs.</p>
+      </div>
+      <div class="sec-item">
+        <h4>Full audit trail</h4>
+        <p>Every match, adjustment, and posted payment is logged and searchable.</p>
+      </div>
+      <div class="sec-item">
+        <h4>Human review built in</h4>
+        <p>Anything Clara isn't confident about goes to your team before it's final.</p>
+      </div>
+      <div class="sec-item">
+        <h4>Your system stays yours</h4>
+        <p>No migration. Clara reads and writes to the PMS you already run.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-border" id="faq">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Questions practices usually ask</h2>
+    </div>
+    <div class="faq">
+      <details open>
+        <summary>Do I need to switch practice management software?</summary>
+        <p>No. Clara connects to what you already use and works alongside it — there's nothing to migrate.</p>
+      </details>
+      <details>
+        <summary>What does my team still handle?</summary>
+        <p>Anything Clara flags as unclear — an unusual denial, a mismatched amount, a new payer contract. Everything else posts on its own.</p>
+      </details>
+      <details>
+        <summary>How is patient data protected?</summary>
+        <p>All data is encrypted in transit and at rest, access is role-based, and every action is written to an audit log your team can review at any time.</p>
+      </details>
+      <details>
+        <summary>How long does it take to get started?</summary>
+        <p>Most practices are fully enrolled and reconciling their first payments within two weeks.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="closing">
+      <h2>Give your team back their mornings.</h2>
+      <p>See Clara reconcile a real batch of payments in a 20 minute call.</p>
+      <a href="#" class="btn btn-lg" style="background:var(--bg);color:var(--ink);">Book a demo</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="logo" style="font-size:19px;">Clara</div>
+      <nav class="foot-links" aria-label="Footer">
+        <a href="#how">How it works</a>
+        <a href="#security">Security</a>
+        <a href="#faq">FAQ</a>
+        <a href="#">Careers</a>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>&copy; 2026 Clara. All rights reserved.</span>
+      <span>Sample design — for internal review</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+function toggleMobileNav(){
+  const panel = document.getElementById('mobile-panel');
+  const btn = document.getElementById('menu-toggle');
+  const willOpen = !panel.classList.contains('open');
+  panel.classList.toggle('open', willOpen);
+  btn.setAttribute('aria-expanded', String(willOpen));
+  btn.setAttribute('aria-label', willOpen ? 'Close menu' : 'Open menu');
+  if (willOpen) {
+    const firstLink = panel.querySelector('a');
+    if (firstLink) firstLink.focus();
+  }
+}
+document.addEventListener('keydown', (e)=>{
+  if (e.key === 'Escape') {
+    const panel = document.getElementById('mobile-panel');
+    if (panel.classList.contains('open')) {
+      panel.classList.remove('open');
+      const btn = document.getElementById('menu-toggle');
+      btn.setAttribute('aria-expanded','false');
+      btn.setAttribute('aria-label','Open menu');
+      btn.focus();
+    }
+  }
+});
+</script>
+
+</body>
+</html>
